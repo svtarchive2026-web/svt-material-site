@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEVENTEEN 物料站</title>
+<style>
+body{font-family:sans-serif;margin:0;background:#ffe6ef}
+header{background:linear-gradient(90deg,#ffd1dc,#c7d9ff);padding:20px;text-align:center;font-size:24px;font-weight:bold;color:white}
+.container{padding:15px}
+.card{background:white;border-radius:16px;padding:15px;margin-bottom:15px;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+img{width:100%;border-radius:10px;margin-top:10px}
+iframe{width:100%;height:220px;border:none;border-radius:10px;margin-top:10px}
+.tag{display:inline-block;background:#ffd6eb;padding:5px 10px;border-radius:10px;margin:3px;font-size:12px}
+.member{font-weight:bold;color:#ff6fa5}
+.duration{color:#888;font-size:14px}
+.link{font-size:14px;margin-top:5px}
+</style>
+</head>
+<body>
+<header>💎 SEVENTEEN 物料收藏 💎</header>
+<div class="container" id="app">載入中...</div>
+
+<script>
+const sheetURL = "https://opensheet.elk.sh/1zJCoiziDA26ofbB5PSRHOlbO_v-EfZ8mYXiHpGdy9Z4/工作表1";
+
+async function loadData(){
+  try{
+    const res = await fetch(sheetURL);
+    const data = await res.json();
+    render(data);
+  }catch(e){
+    document.getElementById('app').innerHTML = "❌ 資料讀取失敗";
+  }
+}
+
+function convertDrive(url){
+  if(url.includes("drive.google.com")){
+    const idMatch = url.match(/[-\w]{25,}/);
+    if(idMatch){
+      return `https://drive.google.com/uc?export=view&id=${idMatch[0]}`;
+    }
+  }
+  return url;
+}
+
+function render(data){
+  const app = document.getElementById('app');
+  app.innerHTML = "";
+
+  data.reverse().forEach(item=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    let html = "";
+
+    if(item.標題) html += `<h3>${item.標題}</h3>`;
+    if(item.成員) html += `<p class="member">${item.成員}</p>`;
+
+    // 🎬 主影片（只支援 YouTube）
+    if(item.主影片 && item.主影片.includes("youtube")){
+      let videoUrl = item.主影片;
+      if(videoUrl.includes("watch")){
+        const id = videoUrl.split("v=")[1]?.split("&")[0];
+        if(id) videoUrl = `https://www.youtube.com/embed/${id}`;
+      }
+      html += `<iframe src="${videoUrl}"></iframe>`;
+    }
+
+    // ⏱ 直播時長
+    if(item.直播時長) html += `<p class="duration">⏱ ${item.直播時長}</p>`;
+
+    // 🖼 圖片
+    if(item.圖片){
+      const imgs = item.圖片.split(',');
+      imgs.forEach(img=>{
+        if(img.trim()){
+          const fixed = convertDrive(img.trim());
+          html += `<img src="${fixed}"/>`;
+        }
+      });
+    }
+
+    // 🏷 標籤
+    if(item.標籤){
+      const tags = item.標籤.split(',');
+      tags.forEach(tag=>{
+        if(tag.trim()) html += `<span class="tag">${tag}</span>`;
+      });
+    }
+
+    // 🔗 所有網址（有填才顯示）
+    const links = [
+      {name:"Weverse",url:item.Weverse網址},
+      {name:"Instagram",url:item.Instagram網址},
+      {name:"Twitter",url:item.Twitter網址},
+      {name:"TikTok",url:item.TikTok網址},
+      {name:"抖音",url:item.抖音網址},
+      {name:"微博",url:item.微博網址},
+      {name:"小紅書",url:item.小紅書網址},
+      {name:"YouTube",url:item.YouTube網址},
+      {name:"其他",url:item.其他網址}
+    ];
+
+    links.forEach(link=>{
+      if(link.url && link.url.trim()){
+        html += `<div class="link"><a href="${link.url}" target="_blank">${link.name}</a></div>`;
+      }
+    });
+
+    card.innerHTML = html;
+    app.appendChild(card);
+  });
+}
+
+loadData();
+</script>
+</body>
+</html>
